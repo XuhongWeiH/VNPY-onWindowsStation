@@ -118,6 +118,7 @@ class BacktestingEngine:
         self.capital = 1_000_000
         self.mode = BacktestingMode.BAR
         self.inverse = False
+        self.collection_name = None
 
         self.strategy_class = None
         self.strategy = None
@@ -181,7 +182,8 @@ class BacktestingEngine:
         capital: int = 0,
         end: datetime = None,
         mode: BacktestingMode = BacktestingMode.BAR,
-        inverse: bool = False
+        inverse: bool = False,
+        collection_name: str = None
     ):
         """"""
         self.mode = mode
@@ -200,6 +202,7 @@ class BacktestingEngine:
         self.end = end
         self.mode = mode
         self.inverse = inverse
+        self.collection_name = collection_name
 
     def add_strategy(self, strategy_class: type, setting: dict):
         """"""
@@ -239,14 +242,16 @@ class BacktestingEngine:
                     self.exchange,
                     self.interval,
                     start,
-                    end
+                    end,
+                    self.collection_name,
                 )
             else:
                 data = load_tick_data(
                     self.symbol,
                     self.exchange,
                     start,
-                    end
+                    end,
+                    self.collection_name,
                 )
 
             self.history_data.extend(data)
@@ -595,7 +600,8 @@ class BacktestingEngine:
                 self.capital,
                 self.end,
                 self.mode,
-                self.inverse
+                self.inverse,
+                self.collection_name
             )))
             results.append(result)
 
@@ -656,6 +662,7 @@ class BacktestingEngine:
         global ga_end
         global ga_mode
         global ga_inverse
+        global ga_collection_name
 
         ga_target_name = target_name
         ga_strategy_class = self.strategy_class
@@ -671,6 +678,7 @@ class BacktestingEngine:
         ga_end = self.end
         ga_mode = self.mode
         ga_inverse = self.inverse
+        ga_collection_name = self.collection_name
 
         # Set up genetic algorithem
         toolbox = base.Toolbox()
@@ -1224,7 +1232,8 @@ def optimize(
     capital: int,
     end: datetime,
     mode: BacktestingMode,
-    inverse: bool
+    inverse: bool,
+    collection_name: str = None
 ):
     """
     Function for running in multiprocessing.pool
@@ -1242,7 +1251,8 @@ def optimize(
         capital=capital,
         end=end,
         mode=mode,
-        inverse=inverse
+        inverse=inverse,
+        collection_name=collection_name
     )
 
     engine.add_strategy(strategy_class, setting)
@@ -1274,7 +1284,8 @@ def _ga_optimize(parameter_values: tuple):
         ga_capital,
         ga_end,
         ga_mode,
-        ga_inverse
+        ga_inverse,
+        ga_collection_name,
     )
     return (result[1],)
 
@@ -1290,11 +1301,12 @@ def load_bar_data(
     exchange: Exchange,
     interval: Interval,
     start: datetime,
-    end: datetime
+    end: datetime,
+    collection_name: str = None
 ):
     """"""
     return database_manager.load_bar_data(
-        symbol, exchange, interval, start, end
+        symbol, exchange, interval, start, end, collection_name
     )
 
 
@@ -1303,11 +1315,12 @@ def load_tick_data(
     symbol: str,
     exchange: Exchange,
     start: datetime,
-    end: datetime
+    end: datetime,
+    collection_name: str = None
 ):
     """"""
     return database_manager.load_tick_data(
-        symbol, exchange, start, end
+        symbol, exchange, start, end, collection_name
     )
 
 

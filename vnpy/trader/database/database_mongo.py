@@ -8,6 +8,7 @@ from vnpy.trader.constant import Exchange, Interval
 from vnpy.trader.object import BarData, TickData
 
 from .database import BaseDatabaseManager, Driver, DB_TZ
+from mongoengine.context_managers import switch_collection
 
 
 def init(_: Driver, settings: dict):
@@ -53,6 +54,8 @@ class DbBarData(Document):
     high_price: float = FloatField()
     low_price: float = FloatField()
     close_price: float = FloatField()
+    total_turnover: float = FloatField()
+
 
     meta = {
         "indexes": [
@@ -78,6 +81,7 @@ class DbBarData(Document):
             high_price=self.high_price,
             low_price=self.low_price,
             close_price=self.close_price,
+            total_turnover=self.total_turnover,
             gateway_name="DB",
         )
         return bar
@@ -200,26 +204,47 @@ class MongoManager(BaseDatabaseManager):
         interval: Interval,
         start: datetime,
         end: datetime,
+        collection_name: str = None,
     ) -> Sequence[BarData]:
-        s = DbBarData.objects(
-            symbol=symbol,
-            exchange=exchange.value,
-            interval=interval.value,
-            datetime__gte=start,
-            datetime__lte=end,
-        )
+        if collection_name is None:
+            s = DbBarData.objects(
+                symbol=symbol,
+                exchange=exchange.value,
+                interval=interval.value,
+                datetime__gte=start,
+                datetime__lte=end,
+            )
+        else:
+            with switch_collection(DbBarData, collection_name):
+                s = DbBarData.objects(
+                    symbol=symbol,
+                    exchange=exchange.value,
+                    interval=interval.value,
+                    datetime__gte=start,
+                    datetime__lte=end,
+                )
         data = [db_bar.to_bar() for db_bar in s]
         return data
 
     def load_tick_data(
-        self, symbol: str, exchange: Exchange, start: datetime, end: datetime
+        self, symbol: str, exchange: Exchange, start: datetime, end: datetime,
+        collection_name: str = None,
     ) -> Sequence[TickData]:
-        s = DbTickData.objects(
-            symbol=symbol,
-            exchange=exchange.value,
-            datetime__gte=start,
-            datetime__lte=end,
-        )
+        if collection_name is None:
+            s = DbTickData.objects(
+                symbol=symbol,
+                exchange=exchange.value,
+                datetime__gte=start,
+                datetime__lte=end,
+            )
+        else:
+            with switch_collection(DbTickData, collection_name):
+                s = DbTickData.objects(
+                    symbol=symbol,
+                    exchange=exchange.value,
+                    datetime__gte=start,
+                    datetime__lte=end,
+                )
         data = [db_tick.to_tick() for db_tick in s]
         return data
 
@@ -234,27 +259,44 @@ class MongoManager(BaseDatabaseManager):
         }
         return param
 
-    def save_bar_data(self, datas: Sequence[BarData]):
+    def save_bar_data(self, datas: Sequence[BarData], collection_name: str = None):
         for d in datas:
             updates = self.to_update_param(d)
             updates.pop("set__gateway_name")
             updates.pop("set__vt_symbol")
-            (
-                DbBarData.objects(
-                    symbol=d.symbol, interval=d.interval.value, datetime=d.datetime
-                ).update_one(upsert=True, **updates)
-            )
 
-    def save_tick_data(self, datas: Sequence[TickData]):
+            if collection_name is None:
+                (
+                    DbBarData.objects(
+                        symbol=d.symbol, interval=d.interval.value, datetime=d.datetime
+                    ).update_one(upsert=True, **updates)
+                )
+            else:
+                with switch_collection(DbBarData, collection_name):
+                    (
+                        DbBarData.objects(
+                            symbol=d.symbol, interval=d.interval.value, datetime=d.datetime
+                        ).update_one(upsert=True, **updates)
+                    )
+
+    def save_tick_data(self, datas: Sequence[TickData], collection_name: str = None):
         for d in datas:
             updates = self.to_update_param(d)
             updates.pop("set__gateway_name")
             updates.pop("set__vt_symbol")
-            (
-                DbTickData.objects(
-                    symbol=d.symbol, exchange=d.exchange.value, datetime=d.datetime
-                ).update_one(upsert=True, **updates)
-            )
+            if collection_name is None:
+                (
+                    DbTickData.objects(
+                        symbol=d.symbol, exchange=d.exchange.value, datetime=d.datetime
+                    ).update_one(upsert=True, **updates)
+                )
+            else:
+                with switch_collection(DbTickData, collection_name):
+                    (
+                        DbTickData.objects(
+                            symbol=d.symbol, exchange=d.exchange.value, datetime=d.datetime
+                        ).update_one(upsert=True, **updates)
+                    )
 
     def get_newest_bar_data(
         self, symbol: str, exchange: "Exchange", interval: "Interval"

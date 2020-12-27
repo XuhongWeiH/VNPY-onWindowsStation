@@ -24,14 +24,14 @@ SETTINGS: Dict[str, Any] = {
     "email.sender": "",
     "email.receiver": "",
 
-    "rqdata.username": "",
-    "rqdata.password": "",
+    "rqdata.username": "13381781395",
+    "rqdata.password": "w19940306",
 
     "database.timezone": get_localzone().zone,
-    "database.driver": "sqlite",                # see database.Driver
-    "database.database": "database.db",         # for sqlite, use this as filepath
+    "database.driver": "mongodb",                # see database.Driver
+    "database.database": "mongodb",         # for sqlite, use this as filepath
     "database.host": "localhost",
-    "database.port": 3306,
+    "database.port": 27017,
     "database.user": "root",
     "database.password": "",
     "database.authentication_source": "admin",  # for mongodb

@@ -7,7 +7,7 @@ python -m pip install https://pip.vnpy.com/colletion/quickfix-1.15.1-cp37-cp37m-
 python -m pip install https://pip.vnpy.com/colletion/ibapi-9.76.1.tar.gz
 
 ::Install Python Modules
-::python -m pip install -r requirements.txt
+python -m pip install -r requirements.txt
 
 :: Install vn.py
-::python -m pip install .
+python -m pip install .

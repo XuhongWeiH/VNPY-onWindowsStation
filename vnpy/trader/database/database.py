@@ -31,7 +31,8 @@ class BaseDatabaseManager(ABC):
         exchange: "Exchange",
         interval: "Interval",
         start: datetime,
-        end: datetime
+        end: datetime,
+        collection_name: str = None
     ) -> Sequence["BarData"]:
         pass
 
@@ -41,7 +42,8 @@ class BaseDatabaseManager(ABC):
         symbol: str,
         exchange: "Exchange",
         start: datetime,
-        end: datetime
+        end: datetime,
+        collection_name: str = None
     ) -> Sequence["TickData"]:
         pass
 
@@ -49,6 +51,7 @@ class BaseDatabaseManager(ABC):
     def save_bar_data(
         self,
         datas: Sequence["BarData"],
+        collection_name: str = None,
     ):
         pass
 
@@ -56,6 +59,7 @@ class BaseDatabaseManager(ABC):
     def save_tick_data(
         self,
         datas: Sequence["TickData"],
+        collection_name: str = None,
     ):
         pass
 
